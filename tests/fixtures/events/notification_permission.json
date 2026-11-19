@@ -1,0 +1,10 @@
+{
+  "ts": 1794823063919,
+  "event": "Notification",
+  "session": "7f8e9d0c-1b2a-4394-a5b6-c7d8e9f0a1b2",
+  "project": "projects",
+  "cwd": "/home/dev/projects",
+  "source": "cli",
+  "notification_type": "permission_prompt",
+  "message": "Claude needs your permission to use Write"
+}

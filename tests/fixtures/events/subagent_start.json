@@ -1,0 +1,10 @@
+{
+  "ts": 1794823035748,
+  "event": "SubagentStart",
+  "session": "0c1d2e3f-4a5b-4c6d-8e7f-a0b1c2d3e4f5",
+  "project": "projects",
+  "cwd": "/home/dev/projects",
+  "source": "cli",
+  "agent_id": "a4dbabcc94daf1c3a",
+  "agent_type": "Explore"
+}

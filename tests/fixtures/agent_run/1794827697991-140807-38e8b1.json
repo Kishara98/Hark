@@ -1,0 +1,1 @@
+{"ts": 1794827697991, "event": "PreToolUse", "session": "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9", "project": "projects", "cwd": "/home/dev/projects/Hark", "source": "vscode", "agent_id": "ac2e27a5dabc39a93", "agent_type": "Explore", "tool": "Bash", "tool_use_id": "toolu_01JCHrJKPsYKo8wEvNH8yV7K", "summary": "Bash: ls /home/dev/projects/Hark/src"}

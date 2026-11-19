@@ -1,0 +1,23 @@
+{
+  "ts": 1794823160000,
+  "event": "PostToolUse",
+  "session": "s-webshop",
+  "project": "WebShop",
+  "cwd": "/home/dev/projects/WebShop",
+  "source": "vscode",
+  "tool": "AskUserQuestion",
+  "tool_use_id": "toolu_ask1",
+  "summary": "AskUserQuestion",
+  "questions": [
+    {
+      "question": "Which parent branch should the new feature branch come from?",
+      "header": "Parent",
+      "options": [
+        "release/2.0-rc",
+        "main",
+        "Epic branch"
+      ],
+      "multi": false
+    }
+  ]
+}
