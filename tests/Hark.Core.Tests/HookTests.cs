@@ -283,6 +283,38 @@ public class RedactTests
     }
 }
 
+public class AsksTests
+{
+    // Same table as hooks/test_record_event.py: both hooks must agree on which replies ask the user something.
+    public static IEnumerable<object[]> Cases() =>
+        JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures", "asks_cases.json")))!.AsArray()
+            .Select(c => new object[] { (string)c!["reply"]!, (bool)c["asks"]! });
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void Table(string reply, bool asks)
+    {
+        var r = HookRecorder.BuildRecord(new JsonObject { ["session_id"] = "s", ["cwd"] = "/p", ["hook_event_name"] = "Stop", ["last_assistant_message"] = reply },
+            new Dictionary<string, string>(), 1);
+        Assert.Equal(asks, r.ContainsKey("asks") && (bool)r["asks"]!);
+    }
+
+    [Fact]
+    public void Only_stop_events_ask()
+    {
+        var r = HookRecorder.BuildRecord(new JsonObject { ["session_id"] = "s", ["cwd"] = "/p", ["hook_event_name"] = "Notification", ["message"] = "Want me to push it?" },
+            new Dictionary<string, string>(), 1);
+        Assert.False(r.ContainsKey("asks"));
+    }
+
+    [Fact]
+    public void Parser_reads_asks()
+    {
+        Assert.True(HookEventParser.TryParse("""{"event":"Stop","session":"s","asks":true}""", DateTime.UtcNow, out var e));
+        Assert.True(e.Asks);
+    }
+}
+
 public class AnswerHookTests
 {
     private const string Questions = """

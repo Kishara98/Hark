@@ -203,7 +203,8 @@ namespace Hark.Core
         {
             var stopped = s.Status == SessionStatus.Stopped;
             var card = Base(s, stopped ? CardKind.Stopped : CardKind.Done, s.DoneUtc);
-            card.Chip = stopped ? "Stopped" : "Done";
+            card.Asks = !stopped && s.DoneAsks;
+            card.Chip = stopped ? "Stopped" : card.Asks ? "Asks you" : "Done";
             card.Body = FirstLine(s.DoneText) ?? (stopped ? "Stopped" : "Finished");
             if (!stopped && s.AgentsDoneThisTurn > 0)
             {

@@ -100,6 +100,23 @@ class RedactTests(unittest.TestCase):
         self.assertEqual(build_record(payload, {}, 1)["last_message"], "Set GITHUB_TOKEN=*** and run it.")
 
 
+ASKS_CASES = json.loads((Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "asks_cases.json").read_text(encoding="utf-8"))
+
+
+class AsksTests(unittest.TestCase):
+    """A reply that ends with a question to the user. The same table is used by the C# tests (HarkHook.exe)."""
+
+    def test_table(self):
+        for case in ASKS_CASES:
+            with self.subTest(reply=case["reply"][:40]):
+                r = build_record({"session_id": "s", "cwd": "/p", "hook_event_name": "Stop", "last_assistant_message": case["reply"]}, {}, 1)
+                self.assertEqual(r.get("asks", False), case["asks"])
+
+    def test_only_stop_events_ask(self):
+        r = build_record({"session_id": "s", "cwd": "/p", "hook_event_name": "Notification", "message": "Want me to push it?"}, {}, 1)
+        self.assertNotIn("asks", r)
+
+
 class BuildRecordTests(unittest.TestCase):
     def test_build_record_question(self):
         r = build_record(ASK_PAYLOAD, {"CLAUDE_CODE_ENTRYPOINT": "claude-vscode"}, 1000)

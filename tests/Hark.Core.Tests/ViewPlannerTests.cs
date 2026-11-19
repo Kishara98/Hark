@@ -98,6 +98,28 @@ public class ViewPlannerTests
     }
 
     [Fact]
+    public void Done_card_says_asks_you_when_the_reply_asks_a_question()
+    {
+        // Live 19/11: Claude ended with a plain text question and the card said "Done".
+        var stop = E("stop.json", 130, 0, "s-notes", "Notes");
+        stop.Asks = true;
+        var c = Assert.Single(Cards(State(E("user_prompt.json", 90, 0, "s-notes", "Notes"), stop)));
+        Assert.Equal("Asks you", c.Chip);
+        Assert.True(c.Asks);
+        Assert.Equal(CardKind.Done, c.Kind);
+        Assert.Empty(c.Options);
+    }
+
+    [Fact]
+    public void Next_prompt_clears_asks()
+    {
+        var stop = E("stop.json", 130, 0, "s-notes", "Notes");
+        stop.Asks = true;
+        var s = State(stop, E("user_prompt.json", 140, 0, "s-notes", "Notes"), E("stop.json", 150, 0, "s-notes", "Notes"));
+        Assert.Equal("Done", Assert.Single(Cards(s)).Chip);
+    }
+
+    [Fact]
     public void Hidden_helper_agents_are_not_counted_as_done()
     {
         // Live 19/11: a plain chat with no agents showed "1 agent done". Claude Code stops small helper agents

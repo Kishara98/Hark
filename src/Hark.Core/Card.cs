@@ -25,6 +25,9 @@ namespace Hark.Core
 
         /// <summary>Question cards: every question with its options and descriptions.</summary>
         public IReadOnlyList<AskQuestion> Questions { get; internal set; } = Array.Empty<AskQuestion>();
+
+        /// <summary>A Done card whose reply asks the user something (amber chip, no answer options).</summary>
+        public bool Asks { get; internal set; }
     }
 
     /// <summary>What the top pill shows.</summary>

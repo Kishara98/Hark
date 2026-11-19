@@ -67,6 +67,29 @@ namespace Hark.Core
         /// <summary>Secrets hidden first, then cut: a token past the first 200 characters must not survive half cut.</summary>
         public static string Clean(string text) => Cut(Redact(text));
 
+        /// <summary>
+        /// True when one of the last 3 lines of the reply (code blocks left out) ends with a question to the user.
+        /// Same rule as _asks in hooks/record_event.py; tests/fixtures/asks_cases.json is the shared table.
+        /// </summary>
+        public static bool Asks(string text)
+        {
+            var lines = new List<string>();
+            var inCode = false;
+            foreach (var raw in (text ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+            {
+                var line = raw.Trim();
+                if (line.StartsWith("```", StringComparison.Ordinal))
+                {
+                    inCode = !inCode;
+                }
+                else if (line.Length > 0 && !inCode)
+                {
+                    lines.Add(line);
+                }
+            }
+            return lines.Skip(Math.Max(0, lines.Count - 3)).Any(l => l.TrimEnd(')', ']', '}', '"', '\'', '*', '_', '`', ' ').EndsWith("?", StringComparison.Ordinal));
+        }
+
         /// <summary>The first line of a reply that reads as a sentence: no headings, list marks, bold or backticks.</summary>
         public static string FirstLine(string text)
         {
@@ -161,6 +184,11 @@ namespace Hark.Core
             }
             Add(record, "error", HookText.Clean(Str(payload, "error")));
             Add(record, "last_message", HookText.Clean(HookText.FirstLine(Str(payload, "last_assistant_message"))));
+            // The reply ends with a question to the user: the card says "Asks you" instead of "Done".
+            if (Str(payload, "hook_event_name") == "Stop" && HookText.Asks(Str(payload, "last_assistant_message")))
+            {
+                record["asks"] = true;
+            }
             return record;
         }
 

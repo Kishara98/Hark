@@ -62,6 +62,19 @@ def _first_line(text):
     return line.strip()
 
 
+def _asks(text):
+    """True when one of the last 3 lines of the reply (code blocks left out) ends with a question to the user.
+    Same rule as HookText.Asks in src/Hark.Core/Hooks.cs; tests/fixtures/asks_cases.json is the shared table."""
+    lines, in_code = [], False
+    for line in str(text).splitlines():
+        line = line.strip()
+        if line.startswith("```"):
+            in_code = not in_code
+        elif line and not in_code:
+            lines.append(line)
+    return any(line.rstrip(")]}\"'*_` ").endswith("?") for line in lines[-3:])
+
+
 def summarize_tool(tool, tool_input):
     tool_input = tool_input if isinstance(tool_input, dict) else {}
     if tool == "Bash" and tool_input.get("command"):
@@ -147,6 +160,8 @@ def build_record(payload, env, now_ms):
         "spawn_type": (tool_input.get("subagent_type") or "general-purpose") if tool in AGENT_TOOLS and isinstance(tool_input, dict) else None,
         "error": _clean(payload["error"]) if payload.get("error") else None,
         "last_message": _clean(_first_line(payload["last_assistant_message"])) if payload.get("last_assistant_message") else None,
+        # The reply ends with a question to the user: the card says "Asks you" instead of "Done".
+        "asks": True if payload.get("hook_event_name") == "Stop" and _asks(payload.get("last_assistant_message") or "") else None,
     }
     return {k: v for k, v in record.items() if v not in (None, "", [])}
 

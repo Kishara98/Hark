@@ -101,6 +101,7 @@ namespace Hark.Core
                     s.Status = SessionStatus.Working;
                     s.AgentsDoneThisTurn = 0;
                     s.DoneText = null;
+                    s.DoneAsks = false;
                     s.Todos = Array.Empty<TodoItem>();
                     s.Recent.Clear();
                     s.MainSteps = 0;
@@ -166,6 +167,7 @@ namespace Hark.Core
                     if (e.Event == "Stop")
                     {
                         Finish(s, e, SessionStatus.Done, e.LastMessage);
+                        s.DoneAsks = s.Status == SessionStatus.Done && e.Asks;
                     }
                     else
                     {

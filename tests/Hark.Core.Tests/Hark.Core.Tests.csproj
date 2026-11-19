@@ -26,6 +26,7 @@
     <None Include="..\fixtures\events\*.json" LinkBase="fixtures\events" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\agent_run\*.json" LinkBase="fixtures\agent_run" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\redact_cases.json" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\asks_cases.json" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

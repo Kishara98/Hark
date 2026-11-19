@@ -1,0 +1,42 @@
+[
+ {
+  "reply": "Alright, something off the clock: what's a thing you've been meaning to learn or build just for fun but haven't gotten around to yet?\n(Answer any of these, or keep hitting me with \"ask me anything\" and I'll keep going.)",
+  "asks": true
+ },
+ {
+  "reply": "Want me to push it?",
+  "asks": true
+ },
+ {
+  "reply": "Summary of the change.\n\n**Should I merge it into main?**",
+  "asks": true
+ },
+ {
+  "reply": "Tell me which branch: main or release?",
+  "asks": true
+ },
+ {
+  "reply": "Done. All tests pass.",
+  "asks": false
+ },
+ {
+  "reply": "See https://example.com/search?q=hark for details.",
+  "asks": false
+ },
+ {
+  "reply": "Which one do you prefer?\nline two\nline three\nline four is done.",
+  "asks": false
+ },
+ {
+  "reply": "Here is the code:\n```\nif (x?)\n```\nAll done.",
+  "asks": false
+ },
+ {
+  "reply": "No reply needed.\n\nNo ticket. Next: you publish the release.",
+  "asks": false
+ },
+ {
+  "reply": "",
+  "asks": false
+ }
+]

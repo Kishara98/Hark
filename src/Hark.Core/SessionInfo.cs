@@ -93,6 +93,9 @@ namespace Hark.Core
         public DateTime DoneUtc { get; internal set; }
         public string DoneText { get; internal set; }
 
+        /// <summary>The finished turn's reply ends with a question to the user.</summary>
+        public bool DoneAsks { get; internal set; }
+
         /// <summary>The main session's own to-do list for the current request.</summary>
         public IReadOnlyList<TodoItem> Todos { get; internal set; } = Array.Empty<TodoItem>();
 

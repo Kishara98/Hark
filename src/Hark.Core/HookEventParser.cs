@@ -48,6 +48,7 @@ namespace Hark.Core
                         Questions = Questions(r),
                         Error = Str(r, "error"),
                         LastMessage = Str(r, "last_message"),
+                        Asks = r.TryGetProperty("asks", out var asks) && asks.ValueKind == JsonValueKind.True,
                         SpawnType = Str(r, "spawn_type"),
                         Todos = Todos(r),
                     };

@@ -128,7 +128,7 @@ namespace Hark.App
 
         private static UIElement ChipRow(Card card)
         {
-            var waiting = card.Kind == CardKind.Question || card.Kind == CardKind.Permission;
+            var waiting = card.Kind == CardKind.Question || card.Kind == CardKind.Permission || card.Asks;
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
             row.Children.Add(new Border
             {

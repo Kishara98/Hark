@@ -53,6 +53,9 @@ namespace Hark.Core
         public string Error { get; set; }
         public string LastMessage { get; set; }
 
+        /// <summary>Stop only: the reply ends with a question to the user.</summary>
+        public bool Asks { get; set; }
+
         /// <summary>Agent launches (main PreToolUse of Agent): the agent type asked for.</summary>
         public string SpawnType { get; set; }
 
