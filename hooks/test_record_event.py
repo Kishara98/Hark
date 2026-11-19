@@ -6,7 +6,7 @@ import time
 import unittest
 from pathlib import Path
 
-from record_event import app_alive, build_record, main, summarize_tool, write_event
+from record_event import app_alive, build_record, main, redact, summarize_tool, write_event
 
 ASK_PAYLOAD = {
     "session_id": "s-ask",
@@ -70,6 +70,34 @@ class SummaryTests(unittest.TestCase):
     def test_summary_handles_missing_input(self):
         self.assertEqual(summarize_tool("Bash", {}), "Bash")
         self.assertEqual(summarize_tool("Read", None), "Read")
+
+
+REDACT_CASES = json.loads((Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "redact_cases.json").read_text(encoding="utf-8"))
+
+
+class RedactTests(unittest.TestCase):
+    """Likely secrets in commands become ***. The same table is used by the C# tests (HarkHook.exe)."""
+
+    def test_table(self):
+        for case in REDACT_CASES:
+            with self.subTest(case=case["in"]):
+                self.assertEqual(redact(case["in"]), case["out"])
+
+    def test_command_summary_never_keeps_the_token(self):
+        payload = {"session_id": "s", "cwd": "/p", "hook_event_name": "PreToolUse", "tool_name": "Bash",
+                   "tool_input": {"command": 'curl -H "Authorization: Bearer abc123def456ghi789" https://api.example.com'}}
+        r = build_record(payload, {}, 1)
+        self.assertEqual(r["summary"], 'Bash: curl -H "Authorization: Bearer ***" https://api.example.com')
+        self.assertNotIn("abc123def456ghi789", json.dumps(r))
+
+    def test_token_past_200_characters_is_hidden_before_the_cut(self):
+        command = "echo " + "x" * 180 + " ghp_abcdefghijklmnopqrstuvwxyz123456"
+        r = build_record({"session_id": "s", "cwd": "/p", "hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": command}}, {}, 1)
+        self.assertNotIn("ghp_abcdefghij", r["summary"])
+
+    def test_messages_and_replies_are_cleaned_too(self):
+        payload = {"session_id": "s", "cwd": "/p", "hook_event_name": "Stop", "last_assistant_message": "Set GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456 and run it."}
+        self.assertEqual(build_record(payload, {}, 1)["last_message"], "Set GITHUB_TOKEN=*** and run it.")
 
 
 class BuildRecordTests(unittest.TestCase):

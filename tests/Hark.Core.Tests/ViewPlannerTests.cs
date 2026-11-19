@@ -74,18 +74,39 @@ public class ViewPlannerTests
         Assert.Empty(c.Options);
     }
 
+    private static HookEvent Agent(string fixture, long ts, string agentId, string agentType = "Explore")
+    {
+        var e = E(fixture, ts, 0, "s-notes", "Notes");
+        e.AgentId = agentId;
+        e.AgentType = agentType;
+        return e;
+    }
+
     [Fact]
     public void Done_card_counts_agents()
     {
         var s = State(
-            E("subagent_start.json", 100, 0, "s-notes", "Notes"),
-            E("subagent_stop.json", 110, 0, "s-notes", "Notes"),
-            E("subagent_stop.json", 120, 0, "s-notes", "Notes"),
+            Agent("subagent_start.json", 100, "a1"),
+            Agent("subagent_start.json", 101, "a2"),
+            Agent("subagent_stop.json", 110, "a1"),
+            Agent("subagent_stop.json", 120, "a2"),
             E("stop.json", 130, 0, "s-notes", "Notes"));
         var c = Assert.Single(Cards(s));
         Assert.Equal("Done", c.Chip);
         Assert.Equal("Notes · Claude CLI · 2 agents done", c.Meta);
         Assert.StartsWith("The folder has", c.Body);
+    }
+
+    [Fact]
+    public void Hidden_helper_agents_are_not_counted_as_done()
+    {
+        // Live 19/11: a plain chat with no agents showed "1 agent done". Claude Code stops small helper agents
+        // (no SubagentStart, no agent type) in the background; only agents Hark saw start or work count.
+        var s = State(
+            E("user_prompt.json", 90, 0, "s-notes", "Notes"),
+            Agent("subagent_stop.json", 110, "helper", agentType: null),
+            E("stop.json", 130, 0, "s-notes", "Notes"));
+        Assert.Equal("Notes · Claude CLI", Assert.Single(Cards(s)).Meta);
     }
 
     [Fact]

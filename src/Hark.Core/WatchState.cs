@@ -147,8 +147,9 @@ namespace Hark.Core
                                 s.FinishedTasks.RemoveAt(0);
                             }
                         }
+                        // Only agents Hark saw start or work: Claude Code also stops hidden helper agents it never started.
+                        s.AgentsDoneThisTurn++;
                     }
-                    s.AgentsDoneThisTurn++;
                     break;
                 case "Stop":
                 case "StopFailure":

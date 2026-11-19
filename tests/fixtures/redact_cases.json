@@ -1,0 +1,74 @@
+[
+ {
+  "in": "curl -H \"Authorization: Bearer abc123def456ghi789\" https://api.example.com",
+  "out": "curl -H \"Authorization: Bearer ***\" https://api.example.com"
+ },
+ {
+  "in": "export GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456",
+  "out": "export GITHUB_TOKEN=***"
+ },
+ {
+  "in": "mysql --password=hunter2 -u root",
+  "out": "mysql --password=*** -u root"
+ },
+ {
+  "in": "mysql --password hunter2 -u root",
+  "out": "mysql --password *** -u root"
+ },
+ {
+  "in": "psql postgres://admin:s3cret@db.example.com:5432/app",
+  "out": "psql postgres://admin:***@db.example.com:5432/app"
+ },
+ {
+  "in": "echo sk-ant-api03-abcdefghijklmnopqrstuv",
+  "out": "echo ***"
+ },
+ {
+  "in": "git push https://oauth2:glpat-EXAMPLE_not_a_real_token@gitlab.example.com/x.git",
+  "out": "git push https://oauth2:***@gitlab.example.com/x.git"
+ },
+ {
+  "in": "aws configure set aws_secret_access_key AKIAIOSFODNN7EXAMPLE",
+  "out": "aws configure set aws_secret_access_key ***"
+ },
+ {
+  "in": "{\"api_key\": \"abc123xyz\"}",
+  "out": "{\"api_key\": ***}"
+ },
+ {
+  "in": "TOKEN='a b c' ./run.sh",
+  "out": "TOKEN=*** ./run.sh"
+ },
+ {
+  "in": "jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+  "out": "jwt ***"
+ },
+ {
+  "in": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----",
+  "out": "***"
+ },
+ {
+  "in": "curl -H 'X-Api-Key: 1234567890abcdef' https://api.example.com",
+  "out": "curl -H 'X-Api-Key: ***' https://api.example.com"
+ },
+ {
+  "in": "git log --author=John --oneline",
+  "out": "git log --author=John --oneline"
+ },
+ {
+  "in": "git show 0123456789abcdef0123456789abcdef01234567",
+  "out": "git show 0123456789abcdef0123456789abcdef01234567"
+ },
+ {
+  "in": "grep -n token src/app.py",
+  "out": "grep -n token src/app.py"
+ },
+ {
+  "in": "npm test -- --max-workers=2",
+  "out": "npm test -- --max-workers=2"
+ },
+ {
+  "in": "cd /home/dev/projects/WebShop && dotnet test",
+  "out": "cd /home/dev/projects/WebShop && dotnet test"
+ }
+]

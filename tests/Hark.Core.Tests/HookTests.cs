@@ -243,6 +243,46 @@ public class HookRecorderTests
     }
 }
 
+public class RedactTests
+{
+    // Same table as hooks/test_record_event.py: both hooks must hide exactly the same things.
+    public static IEnumerable<object[]> Cases() =>
+        JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures", "redact_cases.json")))!.AsArray()
+            .Select(c => new object[] { (string)c!["in"]!, (string)c["out"]! });
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void Table(string input, string expected) => Assert.Equal(expected, HookText.Redact(input));
+
+    [Fact]
+    public void Command_summary_never_keeps_the_token()
+    {
+        var r = HookRecorder.BuildRecord(JsonNode.Parse("""
+            {"session_id": "s", "cwd": "/p", "hook_event_name": "PreToolUse", "tool_name": "Bash",
+             "tool_input": {"command": "curl -H \"Authorization: Bearer abc123def456ghi789\" https://api.example.com"}}
+            """)!.AsObject(), new Dictionary<string, string>(), 1);
+        Assert.Equal("Bash: curl -H \"Authorization: Bearer ***\" https://api.example.com", (string)r["summary"]!);
+        Assert.DoesNotContain("abc123def456ghi789", r.ToJsonString());
+    }
+
+    [Fact]
+    public void Token_past_200_characters_is_hidden_before_the_cut()
+    {
+        var command = "echo " + new string('x', 180) + " ghp_abcdefghijklmnopqrstuvwxyz123456";
+        var r = HookRecorder.BuildRecord(new JsonObject { ["session_id"] = "s", ["cwd"] = "/p", ["hook_event_name"] = "PreToolUse", ["tool_name"] = "Bash",
+            ["tool_input"] = new JsonObject { ["command"] = command } }, new Dictionary<string, string>(), 1);
+        Assert.DoesNotContain("ghp_abcdefghij", (string)r["summary"]!);
+    }
+
+    [Fact]
+    public void Messages_and_replies_are_cleaned_too()
+    {
+        var r = HookRecorder.BuildRecord(new JsonObject { ["session_id"] = "s", ["cwd"] = "/p", ["hook_event_name"] = "Stop",
+            ["last_assistant_message"] = "Set GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456 and run it." }, new Dictionary<string, string>(), 1);
+        Assert.Equal("Set GITHUB_TOKEN=*** and run it.", (string)r["last_message"]!);
+    }
+}
+
 public class AnswerHookTests
 {
     private const string Questions = """

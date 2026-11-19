@@ -37,6 +37,36 @@ namespace Hark.Core
             return text.Substring(0, keep) + "...";
         }
 
+        // Likely secrets become *** before anything is written or shown. Same patterns as redact() in
+        // hooks/record_event.py; tests/fixtures/redact_cases.json is the shared test table.
+        private const string SecretWords = "(?:password|passwd|secret|token|api[_-]?key|apikey|access[_-]?key|authorization|credential)";
+
+        private static readonly (Regex Pattern, MatchEvaluator Replace)[] Redactions =
+        {
+            (new Regex(@"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)"), m => "***"),
+            (new Regex(@"(://[^/\s:@]+:)[^/\s@]+(@)"), m => m.Groups[1].Value + "***" + m.Groups[2].Value),
+            (new Regex(@"(?i)([A-Za-z0-9_.-]*" + SecretWords + @"[A-Za-z0-9_.-]*[""']?\s*[:=]\s*)((?:bearer|basic|token)\s+)?(""[^""]*""|'[^']*'|[^\s""'&;|,}]+)"),
+                m => m.Groups[1].Value + m.Groups[2].Value + "***"),
+            (new Regex(@"(?i)(--?(?:password|passwd|token|secret|api-key|apikey)\s+)(""[^""]*""|'[^']*'|[^\s""']+)"), m => m.Groups[1].Value + "***"),
+            (new Regex(@"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}"), m => m.Groups[1].Value + " ***"),
+            (new Regex(@"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}"
+                + @"|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}"
+                + @"|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})"), m => "***"),
+        };
+
+        public static string Redact(string text)
+        {
+            text = text ?? "";
+            foreach (var (pattern, replace) in Redactions)
+            {
+                text = pattern.Replace(text, replace);
+            }
+            return text;
+        }
+
+        /// <summary>Secrets hidden first, then cut: a token past the first 200 characters must not survive half cut.</summary>
+        public static string Clean(string text) => Cut(Redact(text));
+
         /// <summary>The first line of a reply that reads as a sentence: no headings, list marks, bold or backticks.</summary>
         public static string FirstLine(string text)
         {
@@ -64,12 +94,12 @@ namespace Hark.Core
             var command = Str(o, "command");
             if (tool == "Bash" && command.Length > 0)
             {
-                return HookText.Cut("Bash: " + command);
+                return HookText.Clean("Bash: " + command);
             }
             var pattern = Str(o, "pattern");
             if (PatternTools.Contains(tool) && pattern.Length > 0)
             {
-                return HookText.Cut($"{tool} \"{pattern}\"");
+                return HookText.Clean($"{tool} \"{pattern}\"");
             }
             if (FileTools.Contains(tool))
             {
@@ -80,15 +110,15 @@ namespace Hark.Core
                 }
                 if (path.Length > 0)
                 {
-                    return HookText.Cut(tool + " " + BaseName(path));
+                    return HookText.Clean(tool + " " + BaseName(path));
                 }
             }
             var description = Str(o, "description");
             if (AgentTools.Contains(tool) && description.Length > 0)
             {
-                return HookText.Cut(tool + ": " + description);
+                return HookText.Clean(tool + ": " + description);
             }
-            return HookText.Cut(tool ?? "");
+            return HookText.Clean(tool ?? "");
         }
 
         public static JsonObject BuildRecord(JsonObject payload, IReadOnlyDictionary<string, string> env, long nowMs)
@@ -114,7 +144,7 @@ namespace Hark.Core
                 Add(record, "summary", Summarize(tool, input));
             }
             Add(record, "notification_type", Str(payload, "notification_type"));
-            Add(record, "message", HookText.Cut(Str(payload, "message")));
+            Add(record, "message", HookText.Clean(Str(payload, "message")));
             if (tool == "AskUserQuestion")
             {
                 AddArray(record, "questions", Questions(input as JsonObject));
@@ -129,8 +159,8 @@ namespace Hark.Core
                 var type = Str(launch, "subagent_type");
                 Add(record, "spawn_type", type.Length > 0 ? type : "general-purpose");
             }
-            Add(record, "error", HookText.Cut(Str(payload, "error")));
-            Add(record, "last_message", HookText.Cut(HookText.FirstLine(Str(payload, "last_assistant_message"))));
+            Add(record, "error", HookText.Clean(Str(payload, "error")));
+            Add(record, "last_message", HookText.Clean(HookText.FirstLine(Str(payload, "last_assistant_message"))));
             return record;
         }
 

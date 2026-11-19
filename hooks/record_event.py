@@ -6,6 +6,7 @@ Windows app picks it up. It never fails and never prints anything.
 """
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -24,6 +25,34 @@ def _cut(text):
     return text
 
 
+# Likely secrets become *** before anything is written or shown. Same patterns as HookText.Redact in
+# src/Hark.Core/Hooks.cs; tests/fixtures/redact_cases.json is the shared test table.
+_SECRET_WORDS = r"(?:password|passwd|secret|token|api[_-]?key|apikey|access[_-]?key|authorization|credential)"
+_REDACTIONS = [
+    (re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)"), lambda m: "***"),
+    (re.compile(r"(://[^/\s:@]+:)[^/\s@]+(@)"), lambda m: m.group(1) + "***" + m.group(2)),
+    (re.compile(r"(?i)([A-Za-z0-9_.-]*" + _SECRET_WORDS + r"[A-Za-z0-9_.-]*[\"']?\s*[:=]\s*)((?:bearer|basic|token)\s+)?(\"[^\"]*\"|'[^']*'|[^\s\"'&;|,}]+)"),
+     lambda m: m.group(1) + (m.group(2) or "") + "***"),
+    (re.compile(r"(?i)(--?(?:password|passwd|token|secret|api-key|apikey)\s+)(\"[^\"]*\"|'[^']*'|[^\s\"']+)"), lambda m: m.group(1) + "***"),
+    (re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}"), lambda m: m.group(1) + " ***"),
+    (re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}"
+                r"|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}"
+                r"|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})"), lambda m: "***"),
+]
+
+
+def redact(text):
+    text = str(text)
+    for pattern, replace in _REDACTIONS:
+        text = pattern.sub(replace, text)
+    return text
+
+
+def _clean(text):
+    """Secrets hidden first, then cut: a token past the first 200 characters must not survive half cut."""
+    return _cut(redact(text))
+
+
 def _first_line(text):
     """The first line of a reply that reads as a sentence: no headings, list marks, bold or backticks."""
     lines = [line.strip() for line in str(text).splitlines() if line.strip()]
@@ -36,16 +65,16 @@ def _first_line(text):
 def summarize_tool(tool, tool_input):
     tool_input = tool_input if isinstance(tool_input, dict) else {}
     if tool == "Bash" and tool_input.get("command"):
-        return _cut(f"Bash: {tool_input['command']}")
+        return _clean(f"Bash: {tool_input['command']}")
     if tool in PATTERN_TOOLS and tool_input.get("pattern"):
-        return _cut(f'{tool} "{tool_input["pattern"]}"')
+        return _clean(f'{tool} "{tool_input["pattern"]}"')
     if tool in FILE_TOOLS:
         path = tool_input.get("file_path") or tool_input.get("notebook_path")
         if path:
-            return _cut(f"{tool} {os.path.basename(str(path).rstrip('/'))}")
+            return _clean(f"{tool} {os.path.basename(str(path).rstrip('/'))}")
     if tool in AGENT_TOOLS and tool_input.get("description"):
-        return _cut(f"{tool}: {tool_input['description']}")
-    return _cut(tool or "")
+        return _clean(f"{tool}: {tool_input['description']}")
+    return _clean(tool or "")
 
 
 def _questions(tool_input):
@@ -111,13 +140,13 @@ def build_record(payload, env, now_ms):
         "tool_use_id": payload.get("tool_use_id"),
         "summary": summarize_tool(tool, tool_input) if tool else None,
         "notification_type": payload.get("notification_type"),
-        "message": _cut(payload["message"]) if payload.get("message") else None,
+        "message": _clean(payload["message"]) if payload.get("message") else None,
         "questions": _questions(tool_input) if tool == "AskUserQuestion" else None,
         "todos": _todos(tool_input) if tool == "TodoWrite" else None,
         # No subagent_type means Claude Code starts a general-purpose agent.
         "spawn_type": (tool_input.get("subagent_type") or "general-purpose") if tool in AGENT_TOOLS and isinstance(tool_input, dict) else None,
-        "error": _cut(payload["error"]) if payload.get("error") else None,
-        "last_message": _cut(_first_line(payload["last_assistant_message"])) if payload.get("last_assistant_message") else None,
+        "error": _clean(payload["error"]) if payload.get("error") else None,
+        "last_message": _clean(_first_line(payload["last_assistant_message"])) if payload.get("last_assistant_message") else None,
     }
     return {k: v for k, v in record.items() if v not in (None, "", [])}
 
