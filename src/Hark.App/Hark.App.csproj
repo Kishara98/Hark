@@ -36,6 +36,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Hark.Core\Hark.Core.csproj" />
+    <!-- HarkHook.exe ships next to Hark.exe: the hooks for Claude Code running natively on Windows -->
+    <ProjectReference Include="..\Hark.Hook\Hark.Hook.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <Target Name="CopyHarkHook" AfterTargets="Build">
+    <ItemGroup>
+      <HarkHookFiles Include="..\Hark.Hook\bin\$(Platform)\$(Configuration)\net48\HarkHook.exe;..\Hark.Hook\bin\$(Platform)\$(Configuration)\net48\HarkHook.exe.config" />
+    </ItemGroup>
+    <Copy SourceFiles="@(HarkHookFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

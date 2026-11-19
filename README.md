@@ -18,10 +18,26 @@ Hark is an independent project. It is not made by, or affiliated with, Anthropic
 ## Requirements
 
 - Windows 10 or 11 (.NET Framework 4.8 is built in).
-- Claude Code running in WSL: the CLI in a WSL terminal, or the VS Code extension in a WSL window.
-- Python 3 in WSL (most WSL distributions have it).
+- Claude Code, either on Windows itself (PowerShell, cmd, or VS Code) or in WSL (a WSL terminal, or VS Code in a WSL window).
+- For Claude Code in WSL only: Python 3 in WSL (most WSL distributions have it).
 
 ## Install
+
+### Claude Code on Windows (no WSL)
+
+In PowerShell:
+
+```powershell
+git clone https://github.com/Kishara98/Hark.git
+cd Hark
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+This downloads the ready-built app from the latest release, installs it to `%LOCALAPPDATA%\Programs\Hark` (no admin rights), starts it and adds a Startup shortcut. It then adds Hark's hooks to `%USERPROFILE%\.claude\settings.json`; a backup of that file is made first and your own hooks stay as they are. Nothing else is needed: the hooks are a small program, `HarkHook.exe`, that comes with the app. Start a new Claude Code session, or reload VS Code, so it loads the hooks.
+
+Remove everything with `powershell -ExecutionPolicy Bypass -File uninstall.ps1`.
+
+### Claude Code in WSL
 
 In WSL:
 
@@ -33,7 +49,9 @@ cd Hark
 
 This downloads the ready-built app from the latest release, installs it to `%LOCALAPPDATA%\Programs\Hark` (no admin rights), starts it and adds a Startup shortcut. It then adds Hark's hooks to `~/.claude/settings.json`; a backup of that file is made first and your own hooks stay as they are. Start a new Claude Code session, or reload VS Code, so it loads the hooks.
 
-Remove everything with `./uninstall.sh`. Settings and logs in `%APPDATA%\Hark` and `%LOCALAPPDATA%\Hark` are kept.
+Remove everything with `./uninstall.sh`.
+
+Both ways keep Hark's settings and logs in `%APPDATA%\Hark` and `%LOCALAPPDATA%\Hark`. If you use Claude Code both on Windows and in WSL, run both installers; they share one Hark.
 
 ### Real progress bars (optional)
 
@@ -43,7 +61,7 @@ Agents and tasks show real progress ("2 of 6 done") when Claude keeps a to-do li
 "env": { "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1", "CLAUDE_CODE_ENABLE_TASKS": "0" }
 ```
 
-Without it the bar is an estimate learned from past runs (`~60% · step 7`): half full at the usual number of steps for that agent type, then still moving for longer runs.
+On Windows the file is `%USERPROFILE%\.claude\settings.json`. Without it the bar is an estimate learned from past runs (`~60% · step 7`): half full at the usual number of steps for that agent type, then still moving for longer runs.
 
 ## Privacy
 
@@ -51,11 +69,11 @@ Everything stays on your machine. The hooks write one small JSON file per event 
 
 ## How it works
 
-Claude Code hooks (in WSL) run `hooks/record_event.py` in the background for each event. It writes the event into the inbox only while the app's `heartbeat` file is fresh. The app reads the inbox every second and draws the pill and the cards. The hooks are async, so Claude is never slowed.
+Claude Code runs a hook in the background for each event: `hooks/record_event.py` in WSL, or `HarkHook.exe record` on Windows (the same logic in C#, see `src/Hark.Core/Hooks.cs`). It writes the event into the inbox only while the app's `heartbeat` file is fresh. The app reads the inbox every second and draws the pill and the cards. The hooks are async, so Claude is never slowed.
 
-One more hook, `hooks/answer_hook.py`, runs before each question (AskUserQuestion). While Hark runs and is not paused, it holds the question (VS Code shows Claude as working) and waits up to 30 minutes for an answer from the card. "Answer in VS Code", Open, Pause, Quit or the time limit let the question go to the normal dialog.
+One more hook, `hooks/answer_hook.py` (on Windows `HarkHook.exe answer`), runs before each question (AskUserQuestion). While Hark runs and is not paused, it holds the question (VS Code shows Claude as working) and waits up to 30 minutes for an answer from the card. "Answer in VS Code", Open, Pause, Quit or the time limit let the question go to the normal dialog.
 
-`hooks/agent_hook.py` asks Claude to keep a short to-do list for multi-step requests and agent tasks, so the bars show real progress. An agent's task name comes from the `agent-<id>.meta.json` file Claude Code keeps next to the agent's transcript, so it stays right after a Hark restart and when an agent is resumed.
+`hooks/agent_hook.py` (on Windows `HarkHook.exe agent`) asks Claude to keep a short to-do list for multi-step requests and agent tasks, so the bars show real progress. An agent's task name comes from the `agent-<id>.meta.json` file Claude Code keeps next to the agent's transcript, so it stays right after a Hark restart and when an agent is resumed.
 
 ## Settings and logs
 
@@ -67,7 +85,7 @@ One more hook, `hooks/answer_hook.py`, runs before each question (AskUserQuestio
 - While Hark holds a question, the VS Code dialog only appears after "Answer in VS Code", Open, Pause, Quit or 30 minutes.
 - Open finds windows by process (Code, WindowsTerminal) and the project name in the title. A CLI in a terminal whose title does not show the folder opens the first terminal.
 - A session that ends without a SessionEnd event disappears after 2 hours without events.
-- Claude Code running natively on Windows (not in WSL) is not supported.
+- On Windows, Claude Code runs hook commands in Git Bash (its default). Hark's hook commands are written for that.
 
 ## Build from source
 

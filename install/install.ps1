@@ -13,7 +13,8 @@ if (-not (Test-Path (Join-Path $SourceDir 'Hark.exe'))) {
 
 $target = Join-Path $env:LOCALAPPDATA 'Programs\Hark'
 New-Item -ItemType Directory -Force -Path $target | Out-Null
-robocopy $SourceDir $target /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+# /R and /W: a file in use (a hook running right now) is retried briefly instead of waiting forever
+robocopy $SourceDir $target /MIR /R:5 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) {
     Write-Error "Copy failed (robocopy code $LASTEXITCODE)"
     exit 1
